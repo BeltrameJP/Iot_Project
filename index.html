@@ -1,0 +1,88 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Index</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="jumbotron text-center">
+  <h2>Index</h2>
+</div>
+<div class="container text-center">
+  <div class="container">
+    <div class="container">
+      <label>Rfid</label>
+      <input type="text" name="Rfid" id="rfidEntrada">
+      <button class="btn" type="submit" onclick="adicionarSecao()">Teste</button>
+    </div>
+
+
+    <div class="container">
+      <h2>Finalizar Seção</h2>
+      <button id="btn_finalizar" onclick="finalizarSecao()">Confirmar</button>
+    </div>
+    <div class=container id="finalizado">
+      <h3>Finalizado!</h3>
+    </div>
+
+    <div class="container":>
+      <h2>Adicionar Tempo de Chuveiro</h2>
+      <input type="number" id="in_tempo_chuveiro" name="in_tempo_chuveiro">
+      <button id="btn_tempo" onclick="adicionarTemposSecao()">Confirmar</button>
+    </div>
+
+
+  </div>
+</div>
+
+</body>
+</html>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    $("#finalizado").hide();
+  });
+  function finalizarSecao(){
+    $.post("/finalizarSecao.js",{
+      controlPass: "xxx"
+    },function(data, status){
+      if(status == 'success'){
+        $('#finalizado').show();
+      }
+    })
+  }
+</script>
+
+<script type="text/javascript">
+  function adicionarSecao(){
+    $.post("adicionarSecao.js",{
+      rfid: "" + $('#rfidEntrada').val()
+    },
+    function(data, status){
+      if(status == 'success'){
+        alert("Inserção Concluida!");
+      }else{
+        alert("Falha na Inserção");
+      }
+    });
+  }
+
+  function adicionarTemposSecao(){
+    $.post("adicionarTempoSecao.js",{
+      time: "" + $('#in_tempo_chuveiro').val()
+    },
+    function(data, status){
+      if(status == 'success'){
+        alert('Tempo Inserido!');
+      }else{
+        alert('Erro! Talvez a seção não foi iniciada.');
+      }
+    });
+  }
+</script>

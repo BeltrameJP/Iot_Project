@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Cadastro de Usuários</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="jumbotron text-center">
+  <h2>Status - SmartShower</h2>
+</div>
+<div class="container text-center">
+  <div class="container">
+    <div class="container">
+      <label name="ocupante" id="ocupante">Ocupante: </label>
+    </div>
+    <div class="container">
+      <label name="hora_entrada" id="hora_entrada">Hora Entrada: </label>
+    </div>
+    <div class="container" id="ct_hora_saida">
+      <label name="hora_saida" id="hora_saida">Hora Saída: </label>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+
+<script type="text/javascript">
+  $(document).ready(function(){
+    $('#ct_hora_saida').hide();
+    $.get("/whoInShower", function(data){
+      if(data.active == 1){
+        $('#ct_hora_saida').hide();
+        $('#ocupante').append(data.name);
+        $('#hora_entrada').append(data.timestart); 
+      }else{
+        $('#ocupante').empty();
+        $('#ocupante').append("Último ocupante: " + data.name);
+        $('#hora_entrada').append(data.timestart);
+        $('#hora_saida').append(data.timefinish);
+        $('#ct_hora_saida').show();
+      }
+    })
+  });
+
+  $(function(){
+
+  })
+</script>
