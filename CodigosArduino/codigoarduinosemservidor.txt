@@ -1,0 +1,217 @@
+#include <LiquidCrystal.h> // declara a utilização da biblioteca LiquidCrystal
+#include <PN532.h>
+#include <SPI.h>
+
+#define correntein A1
+//leitor rfid
+#define PN532_CS 10
+PN532 nfc(PN532_CS);
+#define  NFC_DEMO_DEBUG 1
+
+#define DEBUG true
+
+int rele = 8; //pino 8
+
+/*cria um objeto tipo LiquidCrystal que chamei de "lcd" nos pinos citados:
+LiquidCrystal(rs, enable, d4, d5, d6, d7)*/ 
+LiquidCrystal lcd(7, 6, 5, 4, 3, 2);
+
+int leitura,cont;
+const float adc_zero = 511;       //Vref+ = 5V Vref- = -5V n= 10bits zero digital da entrada do arduino
+const unsigned long tamostra = 100000;  //tempo de amostragem  em (us)                 
+const unsigned long numamostra = 250;  //numero de leituras
+const unsigned long intervaloamostra = tamostra/numamostra; //Intervalo de amostragem , deve ser maior que o tempo de conversão AD (tempo entre cada leitura)
+unsigned long prevMicros, tensao, iac;
+unsigned int count;
+float irms, potac ; // Variaveis medidas (Corrente Eficaz e Potência Eficaz)
+uint32_t tag,aux = 0;
+boolean flag = 0;
+
+
+//inicializa as funcoes
+uint32_t le_tag();
+float le_corrente();
+
+
+void setup(){
+   
+  lcd.begin(16, 2);  // Inicia a biblioteca do LCD
+//  Serial.begin(9600); //Inicia a comunicação serial com bound 9600
+ 
+  pinMode(rele, OUTPUT); //Pino de controle do rele
+
+  //verifica se o leitor rfid está presente e pode ser inicializado
+#ifdef NFC_DEMO_DEBUG
+//  Serial.begin(9600);
+//  Serial.println("Hello!");
+#endif
+  nfc.begin();
+
+  uint32_t versiondata = nfc.getFirmwareVersion();
+  if (! versiondata) {
+#ifdef NFC_DEMO_DEBUG
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Leitor RFID:");
+    lcd.setCursor(0,1);
+    lcd.print("erro ou ausente");
+#endif
+    while (1); // halt
+  }
+#ifdef NFC_DEMO_DEBUG
+  // Got ok data, print it out!
+  lcd.setCursor(0,0);
+  lcd.print("Leitor RFID:");
+  lcd.setCursor(0,1);
+  lcd.print("inicializado");
+ 
+#endif
+  // configure board to read RFID tags and cards
+  nfc.SAMConfig();
+ 
+  delay(1000);
+} 
+  
+
+//====================FIM DO SETUP=======================
+ 
+//===========================LOOP PRINCIPAL=======================
+
+void loop(){
+  
+  
+  //==================================== Potência =====================================
+  
+    // Potência Eficaz alternada gasta   =====  Eficiencia do inversor 0,85 ou Fator de Potencia da Rede 0,8 ====== tensao de saida do inversor 120Vca
+   
+   tag = le_tag();
+   irms = le_corrente();
+   potac = 127*irms*0.8;
+  
+      if(tag == 4115080818){
+            flag = !flag;
+            if(flag){
+              lcd.clear();
+              digitalWrite(rele, HIGH);
+              lcd.setCursor(0,0);
+              lcd.print("Acesso liberado,");
+              lcd.setCursor(0,1);
+              lcd.print("Roxo");
+              aux = tag;
+              delay(3000);
+              }
+              else if(tag == aux){
+                digitalWrite(rele, LOW);
+                lcd.clear();
+                lcd.setCursor(0,0);
+                lcd.print("Saida registrada,");
+                lcd.setCursor(0,1);
+                lcd.print("Roxo");
+                aux = 0;
+                delay(3000);
+              }
+              else{
+                lcd.clear();
+                lcd.setCursor(0,0);
+                lcd.print("Ocupado,");
+                lcd.setCursor(0,1);
+                lcd.print("aguarde...");
+                flag = !flag;
+                }
+           }
+            else if(tag == 26996123){
+            flag = !flag;
+            if(flag){
+              lcd.clear();
+              digitalWrite(rele, HIGH);
+              lcd.setCursor(0,0);
+              lcd.print("Acesso liberado,");
+              lcd.setCursor(0,1);
+              lcd.print("Laranja");
+              aux = tag;
+              delay(3000);
+              }
+              else if(tag == aux){
+                digitalWrite(rele, LOW);
+                lcd.clear();
+                lcd.setCursor(0,0);
+                lcd.print("Saida registrada,");
+                lcd.setCursor(0,1);
+                lcd.print("Laranja");
+                aux = 0;
+                delay(3000);
+              }
+              else{
+                lcd.clear();
+                lcd.setCursor(0,0);
+                lcd.print("Ocupado,");
+                lcd.setCursor(0,1);
+                lcd.print("aguarde...");
+                flag = !flag;
+                }
+           }
+          else if(tag){
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Acesso negado,");
+          lcd.setCursor(0,1);
+          lcd.print(tag);
+          delay(500);
+          }
+        
+       else{
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("Aguardando");
+        lcd.setCursor(0,1);
+        lcd.print("cartao");
+        delay(500);
+      }
+    
+                 
+delay(500);  
+ 
+}
+//============================================== FIM da função LOOP ================================================== 
+
+
+
+
+// ============================ Sensor de CORRENTE ========================================
+
+float le_corrente(){
+    leitura = 0;
+    tensao = 0; 
+    count = 0;   
+   while(count < numamostra){
+    
+                          prevMicros = micros() - intervaloamostra ;
+                          if (micros() - prevMicros >= intervaloamostra) // Garante que o tempo entre cada leitura seja  maior que o de conversão AD.
+                          {
+                                                   leitura = analogRead(correntein) - adc_zero;   // para leitura de corrente negativa
+                                                   tensao += (leitura * leitura);  // Somatorio de tensao^2   de 0 até N=numamostra
+                                                   ++count;
+                                                   prevMicros += intervaloamostra;
+                                                                        }
+                          }
+                         
+   // Corrente eficaz alternada:                                
+   irms = sqrt((float)tensao/(float)numamostra) * (27.03 / 1023.0);
+   return irms;
+}
+
+//============================================== Leitura do NFC ================================================== 
+uint32_t le_tag(){
+uint32_t id;
+  // look for MiFare type cards
+  id = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A);
+
+  if (id != 0) {
+#ifdef NFC_DEMO_DEBUG
+   // Serial.print("Read card #"); 
+   // Serial.println(id);
+#endif
+  }
+return id;
+}
+
